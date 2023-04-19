@@ -25,16 +25,16 @@ namespace ApiManagement.Tests.ManagementApiTests
                 var testBase = new ApiManagementTestBase(context);
                 testBase.TryCreateApiManagementService();
 
-                // list all authorization provider
-                var listResponse = await testBase.client.AuthorizationProvider.ListByServiceWithHttpMessagesAsync(
+                // list all authorization providers
+                var authProviderlistResponse = await testBase.client.AuthorizationProvider.ListByServiceWithHttpMessagesAsync(
                     testBase.rgName,
                     testBase.serviceName,
                     null);
 
-                Assert.NotNull(listResponse);
-                Assert.Empty(listResponse.Body);
+                Assert.NotNull(authProviderlistResponse);
+                Assert.Empty(authProviderlistResponse.Body);
 
-                // create authorization provider
+                // create authorization providers
                 string authorizationProviderId = TestUtilities.GenerateName("authorizationProviderId");
                 try
                 {
@@ -45,39 +45,258 @@ namespace ApiManagement.Tests.ManagementApiTests
                         Oauth2 = new AuthorizationProviderOAuth2Settings { RedirectUrl = "https://contoso.com" }
                     };
 
-                    var createResponse = await testBase.client.AuthorizationProvider.CreateOrUpdateWithHttpMessagesAsync(
+                    var createAuthProviderResponse = await testBase.client.AuthorizationProvider.CreateOrUpdateWithHttpMessagesAsync(
                         testBase.rgName,
                         testBase.serviceName,
                         authorizationProviderId,
                         authorizationProviderContract);
 
-                    Assert.NotNull(createResponse);
+                    Assert.NotNull(createAuthProviderResponse);
 
                     // get authorization provider to check if it was created
-                    var getResponse = await testBase.client.AuthorizationProvider.GetWithHttpMessagesAsync(
+                    var getAuthProviderResponse = await testBase.client.AuthorizationProvider.GetWithHttpMessagesAsync(
                         testBase.rgName,
                         testBase.serviceName,
                         authorizationProviderId);
 
-                    Assert.NotNull(getResponse);
-                    Assert.NotNull(getResponse.Headers.ETag);
-                    Assert.NotNull(getResponse.Body);
+                    Assert.NotNull(getAuthProviderResponse);
+                    Assert.NotNull(getAuthProviderResponse.Headers.ETag);
+                    Assert.NotNull(getAuthProviderResponse.Body);
 
-                    Assert.Equal(authorizationProviderId, getResponse.Body.Id);
-                    Assert.Equal(authorizationProviderContract.DisplayName, getResponse.Body.DisplayName);
-                    Assert.Equal(authorizationProviderContract.IdentityProvider, getResponse.Body.IdentityProvider);
-                    Assert.Equal(authorizationProviderContract.Oauth2.RedirectUrl, getResponse.Body.Oauth2.RedirectUrl);
+                    Assert.Equal(authorizationProviderId, getAuthProviderResponse.Body.Id);
+                    Assert.Equal(authorizationProviderContract.DisplayName, getAuthProviderResponse.Body.DisplayName);
+                    Assert.Equal(authorizationProviderContract.IdentityProvider, getAuthProviderResponse.Body.IdentityProvider);
+                    Assert.Equal(authorizationProviderContract.Oauth2.RedirectUrl, getAuthProviderResponse.Body.Oauth2.RedirectUrl);
 
                     // list authorization providers again
-                    listResponse = await testBase.client.AuthorizationProvider.ListByServiceWithHttpMessagesAsync(
+                    authProviderlistResponse = await testBase.client.AuthorizationProvider.ListByServiceWithHttpMessagesAsync(
                         testBase.rgName,
                         testBase.serviceName,
                         null);
 
-                    Assert.NotNull(listResponse);
-                    Assert.NotEmpty(listResponse.Body);
+                    Assert.NotNull(authProviderlistResponse);
+                    Assert.NotEmpty(authProviderlistResponse.Body);
 
-                    var updateParameters = new AuthorizationProviderContract
+                    // list all authorizations
+                    var authorizationlistResponse = await testBase.client.Authorization.ListByAuthorizationProviderWithHttpMessagesAsync(
+                        testBase.rgName,
+                        testBase.serviceName,
+                        authorizationProviderId,
+                        null);
+
+                    Assert.NotNull(authorizationlistResponse);
+                    Assert.Empty(authorizationlistResponse.Body);
+
+                    string authorizationId = TestUtilities.GenerateName("authorizationId");
+                    var authorizationContract = new AuthorizationContract
+                    {
+                        AuthorizationType = AuthorizationType.OAuth2,
+                        OAuth2GrantType = OAuth2GrantType.AuthorizationCode
+                    };
+
+                    var createAuthorizationResponse = await testBase.client.Authorization.CreateOrUpdateWithHttpMessagesAsync(
+                        testBase.rgName,
+                        testBase.serviceName,
+                        authorizationProviderId,
+                        authorizationId,
+                        authorizationContract);
+
+                    Assert.NotNull(createAuthorizationResponse);
+
+                    // get authorization to validate that it was created
+                    var getAuthorizationResponse = await testBase.client.Authorization.GetWithHttpMessagesAsync(
+                        testBase.rgName,
+                        testBase.serviceName,
+                        authorizationProviderId,
+                        authorizationId);
+
+                    Assert.NotNull(getAuthorizationResponse);
+                    Assert.NotNull(getAuthorizationResponse.Headers.ETag);
+                    Assert.NotNull(getAuthorizationResponse.Body);
+
+                    Assert.Equal(authorizationId, getAuthorizationResponse.Body.Id);
+                    Assert.Equal(authorizationContract.AuthorizationType, getAuthorizationResponse.Body.AuthorizationType);
+                    Assert.Equal(authorizationContract.OAuth2GrantType, getAuthorizationResponse.Body.OAuth2GrantType);
+
+                    // list authorizations again
+                    authorizationlistResponse = await testBase.client.Authorization.ListByAuthorizationProviderWithHttpMessagesAsync(
+                        testBase.rgName,
+                        testBase.serviceName,
+                        authorizationProviderId,
+                        null);
+
+                    Assert.NotNull(authorizationlistResponse);
+                    Assert.NotEmpty(authorizationlistResponse.Body);
+
+                    // list all access policies
+                    var listAccessPoliciesResponse = await testBase.client.AuthorizationAccessPolicy.ListByAuthorizationWithHttpMessagesAsync(
+                        testBase.rgName,
+                        testBase.serviceName,
+                        authorizationProviderId,
+                        authorizationId,
+                        null);
+
+                    Assert.NotNull(listAccessPoliciesResponse);
+                    Assert.Empty(listAccessPoliciesResponse.Body);
+
+                    // create access policy
+                    var accessPolicyId = TestUtilities.GenerateName("accessPolicyId");
+                    var accessPolicyContract = new AuthorizationAccessPolicyContract
+                    {
+                        TenantId = TestUtilities.GenerateName("tenantId"),
+                        ObjectId = TestUtilities.GenerateName("objectId")
+                    };
+
+                    var createAccessPolicyResponse = await testBase.client.AuthorizationAccessPolicy.CreateOrUpdateWithHttpMessagesAsync(
+                        testBase.rgName,
+                        testBase.serviceName,
+                        authorizationProviderId,
+                        authorizationId,
+                        accessPolicyId,
+                        accessPolicyContract);
+
+                    Assert.NotNull(createAccessPolicyResponse);
+
+                    // get access policy to validate that it was created
+                    var getAccessPolicyResponse = await testBase.client.AuthorizationAccessPolicy.GetWithHttpMessagesAsync(
+                        testBase.rgName,
+                        testBase.serviceName,
+                        authorizationProviderId,
+                        authorizationId,
+                        accessPolicyId);
+
+                    Assert.NotNull(getAccessPolicyResponse);
+                    Assert.NotNull(getAccessPolicyResponse.Headers.ETag);
+                    Assert.NotNull(getAccessPolicyResponse.Body);
+
+                    Assert.Equal(accessPolicyId, getAccessPolicyResponse.Body.Id);
+                    Assert.Equal(accessPolicyContract.TenantId, getAccessPolicyResponse.Body.TenantId);
+                    Assert.Equal(accessPolicyContract.ObjectId, getAccessPolicyResponse.Body.ObjectId);
+
+                    // list access policies again
+                    listAccessPoliciesResponse = await testBase.client.AuthorizationAccessPolicy.ListByAuthorizationWithHttpMessagesAsync(
+                        testBase.rgName,
+                        testBase.serviceName,
+                        authorizationProviderId,
+                        authorizationId,
+                        null);
+
+                    Assert.NotNull(listAccessPoliciesResponse);
+                    Assert.NotEmpty(listAccessPoliciesResponse.Body);
+
+                    // update access policies
+                    var updateAccessPolicyParameters = new AuthorizationAccessPolicyContract
+                    {
+                        TenantId = TestUtilities.GenerateName("newTenantId"),
+                        ObjectId = TestUtilities.GenerateName("objectId")
+                    };
+
+                    await testBase.client.AuthorizationAccessPolicy.CreateOrUpdateWithHttpMessagesAsync(
+                        testBase.rgName,
+                        testBase.serviceName,
+                        authorizationProviderId,
+                        authorizationId,
+                        accessPolicyId,
+                        updateAccessPolicyParameters,
+                        getAccessPolicyResponse.Headers.ETag);
+
+                    // get access policy to validate that it was updated
+                    getAccessPolicyResponse = await testBase.client.AuthorizationAccessPolicy.GetWithHttpMessagesAsync(
+                        testBase.rgName,
+                        testBase.serviceName,
+                        authorizationProviderId,
+                        authorizationId,
+                        accessPolicyId);
+
+                    Assert.NotNull(getAccessPolicyResponse);
+                    Assert.NotNull(getAccessPolicyResponse.Headers.ETag);
+                    Assert.NotNull(getAccessPolicyResponse.Body);
+
+                    Assert.Equal(accessPolicyId, getAccessPolicyResponse.Body.Id);
+                    Assert.Equal(updateAccessPolicyParameters.TenantId, getAccessPolicyResponse.Body.TenantId);
+                    Assert.Equal(updateAccessPolicyParameters.ObjectId, getAccessPolicyResponse.Body.ObjectId);
+
+                    // delete access policy
+                    await testBase.client.AuthorizationAccessPolicy.DeleteWithHttpMessagesAsync(
+                        testBase.rgName,
+                        testBase.serviceName,
+                        authorizationProviderId,
+                        authorizationId,
+                        accessPolicyId,
+                        getAccessPolicyResponse.Headers.ETag);
+
+                    // get access policy to validate that it was deleted
+                    try
+                    {
+                        await testBase.client.AuthorizationAccessPolicy.GetWithHttpMessagesAsync(
+                            testBase.rgName,
+                            testBase.serviceName,
+                            authorizationProviderId,
+                            authorizationId,
+                            accessPolicyId);
+
+                        throw new Exception("This code should not have been executed.");
+                    }
+                    catch (ErrorResponseException ex)
+                    {
+                        Assert.Equal((int)HttpStatusCode.NotFound, (int)ex.Response.StatusCode);
+                    }
+
+                    // update authorization
+                    var updateAuthorizationParameters = new AuthorizationContract
+                    {
+                        AuthorizationType = AuthorizationType.OAuth2,
+                        OAuth2GrantType = OAuth2GrantType.ClientCredentials
+                    };
+
+                    await testBase.client.Authorization.CreateOrUpdateWithHttpMessagesAsync(
+                        testBase.rgName,
+                        testBase.serviceName,
+                        authorizationProviderId,
+                        authorizationId,
+                        updateAuthorizationParameters,
+                        getAuthorizationResponse.Headers.ETag);
+
+                    // get authorization to validate that it was updated
+                    getAuthorizationResponse = await testBase.client.Authorization.GetWithHttpMessagesAsync(
+                        testBase.rgName,
+                        testBase.serviceName,
+                        authorizationProviderId,
+                        authorizationId);
+
+                    Assert.NotNull(getAuthorizationResponse);
+                    Assert.NotNull(getAuthorizationResponse.Headers.ETag);
+                    Assert.NotNull(getAuthorizationResponse.Body);
+
+                    Assert.Equal(authorizationId, getAuthorizationResponse.Body.Id);
+                    Assert.Equal(updateAuthorizationParameters.AuthorizationType, getAuthorizationResponse.Body.AuthorizationType);
+                    Assert.Equal(updateAuthorizationParameters.OAuth2GrantType, getAuthorizationResponse.Body.OAuth2GrantType);
+
+                    // delete authorization
+                    await testBase.client.Authorization.DeleteWithHttpMessagesAsync(
+                        testBase.rgName,
+                        testBase.serviceName,
+                        authorizationProviderId,
+                        authorizationId,
+                        getAuthorizationResponse.Headers.ETag);
+
+                    // get authorization to validate that it was deleted
+                    try
+                    {
+                        await testBase.client.Authorization.GetWithHttpMessagesAsync(
+                            testBase.rgName,
+                            testBase.serviceName,
+                            authorizationProviderId,
+                            authorizationId);
+
+                        throw new Exception("This code should not have been executed.");
+                    }
+                    catch (ErrorResponseException ex)
+                    {
+                        Assert.Equal((int)HttpStatusCode.NotFound, (int)ex.Response.StatusCode);
+                    }
+
+                    var updateAuthProviderParameters = new AuthorizationProviderContract
                     {
                         DisplayName = TestUtilities.GenerateName("newAuthorizationProviderDisplayName"),
                     };
@@ -87,30 +306,30 @@ namespace ApiManagement.Tests.ManagementApiTests
                         testBase.rgName,
                         testBase.serviceName,
                         authorizationProviderId,
-                        updateParameters,
-                        getResponse.Headers.ETag);
+                        updateAuthProviderParameters,
+                        getAuthProviderResponse.Headers.ETag);
 
                     // get authorization provider to validate that it was updated
-                    getResponse = await testBase.client.AuthorizationProvider.GetWithHttpMessagesAsync(
+                    getAuthProviderResponse = await testBase.client.AuthorizationProvider.GetWithHttpMessagesAsync(
                         testBase.rgName,
                         testBase.serviceName,
                         authorizationProviderId);
 
-                    Assert.NotNull(getResponse);
-                    Assert.NotNull(getResponse.Headers.ETag);
-                    Assert.NotNull(getResponse.Body);
+                    Assert.NotNull(getAuthProviderResponse);
+                    Assert.NotNull(getAuthProviderResponse.Headers.ETag);
+                    Assert.NotNull(getAuthProviderResponse.Body);
 
-                    Assert.Equal(authorizationProviderId, getResponse.Body.Id);
-                    Assert.Equal(updateParameters.DisplayName, getResponse.Body.DisplayName);
-                    Assert.Equal(authorizationProviderContract.IdentityProvider, getResponse.Body.IdentityProvider);
-                    Assert.Equal(authorizationProviderContract.Oauth2.RedirectUrl, getResponse.Body.Oauth2.RedirectUrl);
+                    Assert.Equal(authorizationProviderId, getAuthProviderResponse.Body.Id);
+                    Assert.Equal(updateAuthProviderParameters.DisplayName, getAuthProviderResponse.Body.DisplayName);
+                    Assert.Equal(authorizationProviderContract.IdentityProvider, getAuthProviderResponse.Body.IdentityProvider);
+                    Assert.Equal(authorizationProviderContract.Oauth2.RedirectUrl, getAuthProviderResponse.Body.Oauth2.RedirectUrl);
 
                     // delete authorization provider
                     await testBase.client.AuthorizationProvider.DeleteWithHttpMessagesAsync(
                         testBase.rgName,
                         testBase.serviceName,
                         authorizationProviderId,
-                        getResponse.Headers.ETag);
+                        getAuthProviderResponse.Headers.ETag);
 
                     // get authorization provider to check if it was deleted
                     try
@@ -130,310 +349,6 @@ namespace ApiManagement.Tests.ManagementApiTests
                 finally
                 {
                     // delete authorization provider to ensure clean up
-                    await testBase.client.AuthorizationProvider.DeleteWithHttpMessagesAsync(
-                        testBase.rgName,
-                        testBase.serviceName,
-                        authorizationProviderId,
-                        "*");
-                }
-            }
-        }
-
-        [Fact]
-        [Trait("owner", "loganzipkes")]
-        public async Task AuthorizationCreateListUpdateDelete()
-        {
-            Environment.SetEnvironmentVariable("AZURE_TEST_MODE", "Playback");
-            using (MockContext context = MockContext.Start(this.GetType()))
-            {
-                var testBase = new ApiManagementTestBase(context);
-                testBase.TryCreateApiManagementService();
-
-                // create parent authorization provider
-                string authorizationProviderId = TestUtilities.GenerateName("authorizationProviderId");
-                try
-                {
-                    var createAuthorizationProviderResponse = await testBase.client.AuthorizationProvider.CreateOrUpdateWithHttpMessagesAsync(
-                        testBase.rgName,
-                        testBase.serviceName,
-                        authorizationProviderId,
-                        new AuthorizationProviderContract
-                        {
-                            DisplayName = TestUtilities.GenerateName("authorizationProviderDisplayName"),
-                            IdentityProvider = TestUtilities.GenerateName("identityProvider"),
-                            Oauth2 = new AuthorizationProviderOAuth2Settings { RedirectUrl = "https://contoso.com" }
-                        });
-                    
-                    // list all authorizations
-                    var listResponse = await testBase.client.Authorization.ListByAuthorizationProviderWithHttpMessagesAsync(
-                        testBase.rgName,
-                        testBase.serviceName,
-                        authorizationProviderId,
-                        null);
-
-                    // create authorization
-                    string authorizationId = TestUtilities.GenerateName("authorizationId");
-                    var authorizationContract = new AuthorizationContract
-                    {
-                        AuthorizationType = AuthorizationType.OAuth2,
-                        OAuth2GrantType = OAuth2GrantType.AuthorizationCode
-                    };
-
-                    var createAuthorizationResponse = await testBase.client.Authorization.CreateOrUpdateWithHttpMessagesAsync(
-                        testBase.rgName,
-                        testBase.serviceName,
-                        authorizationProviderId,
-                        authorizationId,
-                        authorizationContract);
-
-                    Assert.NotNull(createAuthorizationResponse);
-
-                    // get authorization to validate that it was created
-                    var getResponse = await testBase.client.Authorization.GetWithHttpMessagesAsync(
-                        testBase.rgName,
-                        testBase.serviceName,
-                        authorizationProviderId,
-                        authorizationId);
-
-                    Assert.NotNull(getResponse);
-                    Assert.NotNull(getResponse.Headers.ETag);
-                    Assert.NotNull(getResponse.Body);
-
-                    Assert.Equal(authorizationId, getResponse.Body.Id);
-                    Assert.Equal(authorizationContract.AuthorizationType, getResponse.Body.AuthorizationType);
-                    Assert.Equal(authorizationContract.OAuth2GrantType, getResponse.Body.OAuth2GrantType);
-
-                    // list authorizations again
-                    listResponse = await testBase.client.Authorization.ListByAuthorizationProviderWithHttpMessagesAsync(
-                        testBase.rgName,
-                        testBase.serviceName,
-                        authorizationProviderId,
-                        null);
-
-                    Assert.NotNull(listResponse);
-                    Assert.NotEmpty(listResponse.Body);
-
-                    // update authorization
-                    var updateParameters = new AuthorizationContract
-                    {
-                        AuthorizationType = AuthorizationType.OAuth2,
-                        OAuth2GrantType = OAuth2GrantType.ClientCredentials
-                    };
-
-                    await testBase.client.Authorization.CreateOrUpdateWithHttpMessagesAsync(
-                        testBase.rgName,
-                        testBase.serviceName,
-                        authorizationProviderId,
-                        authorizationId,
-                        updateParameters,
-                        getResponse.Headers.ETag);
-
-                    // get authorization to validate that it was updated
-                    getResponse = await testBase.client.Authorization.GetWithHttpMessagesAsync(
-                        testBase.rgName,
-                        testBase.serviceName,
-                        authorizationProviderId,
-                        authorizationId);
-
-                    Assert.NotNull(getResponse);
-                    Assert.NotNull(getResponse.Headers.ETag);
-                    Assert.NotNull(getResponse.Body);
-
-                    Assert.Equal(authorizationId, getResponse.Body.Id);
-                    Assert.Equal(updateParameters.AuthorizationType, getResponse.Body.AuthorizationType);
-                    Assert.Equal(updateParameters.OAuth2GrantType, getResponse.Body.OAuth2GrantType);
-
-                    // delete authorization
-                    await testBase.client.Authorization.DeleteWithHttpMessagesAsync(
-                        testBase.rgName,
-                        testBase.serviceName,
-                        authorizationProviderId,
-                        authorizationId,
-                        getResponse.Headers.ETag);
-
-                    // get authorization to validate that it was deleted
-                    try
-                    {
-                        await testBase.client.Authorization.GetWithHttpMessagesAsync(
-                            testBase.rgName,
-                            testBase.serviceName,
-                            authorizationProviderId,
-                            authorizationId);
-
-                        throw new Exception("This code should not have been executed.");
-                    }
-                    catch (ErrorResponseException ex)
-                    {
-                        Assert.Equal((int)HttpStatusCode.NotFound, (int)ex.Response.StatusCode);
-                    }
-                }
-                finally
-                {
-                    // delete authorization provider to ensure cascade clean up
-                    await testBase.client.AuthorizationProvider.DeleteWithHttpMessagesAsync(
-                        testBase.rgName,
-                        testBase.serviceName,
-                        authorizationProviderId,
-                        "*");
-                }
-            }
-        }
-
-        [Fact]
-        [Trait("owner", "loganzipkes")]
-        public async Task AccessPolicyCreateListUpdateDelete()
-        {
-            Environment.SetEnvironmentVariable("AZURE_TEST_MODE", "Playback");
-            using (MockContext context = MockContext.Start(this.GetType()))
-            {
-                var testBase = new ApiManagementTestBase(context);
-                testBase.TryCreateApiManagementService();
-
-                // create parent authorization provider
-                string authorizationProviderId = TestUtilities.GenerateName("authorizationProviderId");
-
-                try
-                {
-                    var createAuthorizationProviderResponse = await testBase.client.AuthorizationProvider.CreateOrUpdateWithHttpMessagesAsync(
-                        testBase.rgName,
-                        testBase.serviceName,
-                        authorizationProviderId,
-                        new AuthorizationProviderContract
-                        {
-                            DisplayName = TestUtilities.GenerateName("authorizationProviderDisplayName"),
-                            IdentityProvider = TestUtilities.GenerateName("identityProvider"),
-                            Oauth2 = new AuthorizationProviderOAuth2Settings { RedirectUrl = "https://contoso.com" }
-                        });
-
-                    var authorizationId = TestUtilities.GenerateName("authorizationId");
-                    var createAuthorizationResponse = await testBase.client.Authorization.CreateOrUpdateWithHttpMessagesAsync(
-                        testBase.rgName,
-                        testBase.serviceName,
-                        authorizationProviderId,
-                        authorizationId,
-                        new AuthorizationContract
-                        {
-                            AuthorizationType = AuthorizationType.OAuth2,
-                            OAuth2GrantType = OAuth2GrantType.AuthorizationCode
-                        });
-
-                    // list all access policies
-                    var listResponse = await testBase.client.AuthorizationAccessPolicy.ListByAuthorizationWithHttpMessagesAsync(
-                        testBase.rgName,
-                        testBase.serviceName,
-                        authorizationProviderId,
-                        authorizationId,
-                        null);
-
-                    Assert.NotNull(listResponse);
-                    Assert.Empty(listResponse.Body);
-
-                    // create access policy
-                    var accessPolicyId = TestUtilities.GenerateName("accessPolicyId");
-                    var accessPolicyContract = new AuthorizationAccessPolicyContract
-                    {
-                        TenantId = TestUtilities.GenerateName("tenantId"),
-                        ObjectId = TestUtilities.GenerateName("objectId")
-                    };
-
-                    var createResponse = await testBase.client.AuthorizationAccessPolicy.CreateOrUpdateWithHttpMessagesAsync(
-                        testBase.rgName,
-                        testBase.serviceName,
-                        authorizationProviderId,
-                        authorizationId,
-                        accessPolicyId,
-                        accessPolicyContract);
-
-                    Assert.NotNull(createResponse);
-
-                    // get access policy to validate that it was created
-                    var getResponse = await testBase.client.AuthorizationAccessPolicy.GetWithHttpMessagesAsync(
-                        testBase.rgName,
-                        testBase.serviceName,
-                        authorizationProviderId,
-                        authorizationId,
-                        accessPolicyId);
-
-                    Assert.NotNull(getResponse);
-                    Assert.NotNull(getResponse.Headers.ETag);
-                    Assert.NotNull(getResponse.Body);
-
-                    Assert.Equal(accessPolicyId, getResponse.Body.Id);
-                    Assert.Equal(accessPolicyContract.TenantId, getResponse.Body.TenantId);
-                    Assert.Equal(accessPolicyContract.ObjectId, getResponse.Body.ObjectId);
-
-                    // list access policies again
-                    listResponse = await testBase.client.AuthorizationAccessPolicy.ListByAuthorizationWithHttpMessagesAsync(
-                        testBase.rgName,
-                        testBase.serviceName,
-                        authorizationProviderId,
-                        authorizationId,
-                        null);
-
-                    Assert.NotNull(listResponse);
-                    Assert.NotEmpty(listResponse.Body);
-
-                    // update access policies
-                    var updateParameters = new AuthorizationAccessPolicyContract
-                    {
-                        TenantId = TestUtilities.GenerateName("newTenantId"),
-                        ObjectId = TestUtilities.GenerateName("objectId")
-                    };
-
-                    await testBase.client.AuthorizationAccessPolicy.CreateOrUpdateWithHttpMessagesAsync(
-                        testBase.rgName,
-                        testBase.serviceName,
-                        authorizationProviderId,
-                        authorizationId,
-                        accessPolicyId,
-                        updateParameters,
-                        getResponse.Headers.ETag);
-
-                    // get access policy to validate that it was updated
-                    getResponse = await testBase.client.AuthorizationAccessPolicy.GetWithHttpMessagesAsync(
-                        testBase.rgName,
-                        testBase.serviceName,
-                        authorizationProviderId,
-                        authorizationId,
-                        accessPolicyId);
-
-                    Assert.NotNull(getResponse);
-                    Assert.NotNull(getResponse.Headers.ETag);
-                    Assert.NotNull(getResponse.Body);
-
-                    Assert.Equal(accessPolicyId, getResponse.Body.Id);
-                    Assert.Equal(updateParameters.TenantId, getResponse.Body.TenantId);
-                    Assert.Equal(updateParameters.ObjectId, getResponse.Body.ObjectId);
-
-                    // delete access policy
-                    await testBase.client.AuthorizationAccessPolicy.DeleteWithHttpMessagesAsync(
-                        testBase.rgName,
-                        testBase.serviceName,
-                        authorizationProviderId,
-                        authorizationId,
-                        accessPolicyId,
-                        getResponse.Headers.ETag);
-
-                    // get access policy to validate that it was deleted
-                    try
-                    {
-                        await testBase.client.AuthorizationAccessPolicy.GetWithHttpMessagesAsync(
-                            testBase.rgName,
-                            testBase.serviceName,
-                            authorizationProviderId,
-                            authorizationId,
-                            accessPolicyId);
-
-                        throw new Exception("This code should not have been executed.");
-                    }
-                    catch (ErrorResponseException ex)
-                    {
-                        Assert.Equal((int)HttpStatusCode.NotFound, (int)ex.Response.StatusCode);
-                    }
-                }
-                finally
-                {
-                    // delete authorization provider to ensure cascade clean up
                     await testBase.client.AuthorizationProvider.DeleteWithHttpMessagesAsync(
                         testBase.rgName,
                         testBase.serviceName,
