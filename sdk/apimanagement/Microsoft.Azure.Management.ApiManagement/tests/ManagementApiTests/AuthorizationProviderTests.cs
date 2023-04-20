@@ -17,7 +17,7 @@ namespace ApiManagement.Tests.ManagementApiTests
     {
         [Fact]
         [Trait("owner", "loganzipkes")]
-        public async Task AuthorizationProviderCreateListUpdateDelete()
+        public async Task CreateListUpdateDelete()
         {
             Environment.SetEnvironmentVariable("AZURE_TEST_MODE", "Playback");
             using (MockContext context = MockContext.Start(this.GetType()))
@@ -127,6 +127,19 @@ namespace ApiManagement.Tests.ManagementApiTests
 
                     Assert.NotNull(authorizationlistResponse);
                     Assert.NotEmpty(authorizationlistResponse.Body);
+
+                    // get login link
+                    var getLoginLinksResponse = await testBase.client.AuthorizationLoginLinks.PostWithHttpMessagesAsync(
+                        testBase.rgName,
+                        testBase.serviceName,
+                        authorizationProviderId,
+                        authorizationId,
+                        new AuthorizationLoginRequestContract
+                        {
+                            PostLoginRedirectUrl = "https://contoso.com"
+                        });
+
+                    Assert.NotNull(getLoginLinksResponse);
 
                     // list all access policies
                     var listAccessPoliciesResponse = await testBase.client.AuthorizationAccessPolicy.ListByAuthorizationWithHttpMessagesAsync(
