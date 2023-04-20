@@ -1,0 +1,23 @@
+{
+  "Entries": [
+
+  ],
+  "Names": {
+    "CreateListUpdateDelete": [
+
+    ]
+  },
+  "Variables": {
+    "SubscriptionId": "",
+    "TestCertificate": "",
+    "TestCertificatePassword": "",
+    "testKeyVaultSecretUrl": "",
+    "TestBackupStorageAccount": "",
+    "TestBackupUserMsiClientId": "",
+    "TestBackupUserMsiResourceId": "",
+    "SubId": "",
+    "ServiceName": "",
+    "Location": "",
+    "ResourceGroup": ""
+  }
+}
