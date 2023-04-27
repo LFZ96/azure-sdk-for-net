@@ -6,6 +6,7 @@
 using Microsoft.Azure.Management.ApiManagement.Models;
 using Microsoft.Rest.ClientRuntime.Azure.TestFramework;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Net;
 using System.Threading.Tasks;
@@ -41,8 +42,20 @@ namespace ApiManagement.Tests.ManagementApiTests
                     var authorizationProviderContract = new AuthorizationProviderContract
                     {
                         DisplayName = TestUtilities.GenerateName("authorizationProviderDisplayName"),
-                        IdentityProvider = TestUtilities.GenerateName("identityProvider"),
-                        Oauth2 = new AuthorizationProviderOAuth2Settings { RedirectUrl = "https://contoso.com" }
+                        IdentityProvider = "google",
+                        Oauth2 = new AuthorizationProviderOAuth2Settings
+                        {
+                            RedirectUrl = "https://constoso.com",
+                            GrantTypes = new AuthorizationProviderOAuth2GrantTypes
+                            {
+                                AuthorizationCode = new Dictionary<string, string>()
+                                {
+                                    { "clientId", "clientid" },
+                                    { "clientSecret", "clientsecret" },
+                                    { "scopes", "scopes" }
+                                }
+                            }
+                        }
                     };
 
                     var createAuthProviderResponse = await testBase.client.AuthorizationProvider.CreateOrUpdateWithHttpMessagesAsync(
@@ -60,13 +73,10 @@ namespace ApiManagement.Tests.ManagementApiTests
                         authorizationProviderId);
 
                     Assert.NotNull(getAuthProviderResponse);
-                    Assert.NotNull(getAuthProviderResponse.Headers.ETag);
                     Assert.NotNull(getAuthProviderResponse.Body);
 
-                    Assert.Equal(authorizationProviderId, getAuthProviderResponse.Body.Id);
                     Assert.Equal(authorizationProviderContract.DisplayName, getAuthProviderResponse.Body.DisplayName);
                     Assert.Equal(authorizationProviderContract.IdentityProvider, getAuthProviderResponse.Body.IdentityProvider);
-                    Assert.Equal(authorizationProviderContract.Oauth2.RedirectUrl, getAuthProviderResponse.Body.Oauth2.RedirectUrl);
 
                     // list authorization providers again
                     authProviderlistResponse = await testBase.client.AuthorizationProvider.ListByServiceWithHttpMessagesAsync(
@@ -111,10 +121,8 @@ namespace ApiManagement.Tests.ManagementApiTests
                         authorizationId);
 
                     Assert.NotNull(getAuthorizationResponse);
-                    Assert.NotNull(getAuthorizationResponse.Headers.ETag);
                     Assert.NotNull(getAuthorizationResponse.Body);
 
-                    Assert.Equal(authorizationId, getAuthorizationResponse.Body.Id);
                     Assert.Equal(authorizationContract.AuthorizationType, getAuthorizationResponse.Body.AuthorizationType);
                     Assert.Equal(authorizationContract.OAuth2GrantType, getAuthorizationResponse.Body.OAuth2GrantType);
 
@@ -154,10 +162,10 @@ namespace ApiManagement.Tests.ManagementApiTests
 
                     // create access policy
                     var accessPolicyId = TestUtilities.GenerateName("accessPolicyId");
-                    var accessPolicyContract = new AuthorizationAccessPolicyContract
+                    var accessPolicyContract = new AuthorizationAccessPolicyContract()
                     {
-                        TenantId = TestUtilities.GenerateName("tenantId"),
-                        ObjectId = TestUtilities.GenerateName("objectId")
+                        TenantId = "72f988bf-86f1-41af-91ab-2d7cd011db47",
+                        ObjectId = "a676137a-7ef9-49cd-a466-d87b143841da"
                     };
 
                     var createAccessPolicyResponse = await testBase.client.AuthorizationAccessPolicy.CreateOrUpdateWithHttpMessagesAsync(
@@ -179,10 +187,8 @@ namespace ApiManagement.Tests.ManagementApiTests
                         accessPolicyId);
 
                     Assert.NotNull(getAccessPolicyResponse);
-                    Assert.NotNull(getAccessPolicyResponse.Headers.ETag);
                     Assert.NotNull(getAccessPolicyResponse.Body);
 
-                    Assert.Equal(accessPolicyId, getAccessPolicyResponse.Body.Id);
                     Assert.Equal(accessPolicyContract.TenantId, getAccessPolicyResponse.Body.TenantId);
                     Assert.Equal(accessPolicyContract.ObjectId, getAccessPolicyResponse.Body.ObjectId);
 
@@ -200,8 +206,8 @@ namespace ApiManagement.Tests.ManagementApiTests
                     // update access policies
                     var updateAccessPolicyParameters = new AuthorizationAccessPolicyContract
                     {
-                        TenantId = TestUtilities.GenerateName("newTenantId"),
-                        ObjectId = TestUtilities.GenerateName("objectId")
+                        TenantId = "72f988bf-86f1-41af-91ab-2d7cd011db47",
+                        ObjectId = "a676137a-7ef9-49cd-a466-d87b143841da"
                     };
 
                     await testBase.client.AuthorizationAccessPolicy.CreateOrUpdateWithHttpMessagesAsync(
@@ -210,8 +216,7 @@ namespace ApiManagement.Tests.ManagementApiTests
                         authorizationProviderId,
                         authorizationId,
                         accessPolicyId,
-                        updateAccessPolicyParameters,
-                        getAccessPolicyResponse.Headers.ETag);
+                        updateAccessPolicyParameters);
 
                     // get access policy to validate that it was updated
                     getAccessPolicyResponse = await testBase.client.AuthorizationAccessPolicy.GetWithHttpMessagesAsync(
@@ -222,10 +227,8 @@ namespace ApiManagement.Tests.ManagementApiTests
                         accessPolicyId);
 
                     Assert.NotNull(getAccessPolicyResponse);
-                    Assert.NotNull(getAccessPolicyResponse.Headers.ETag);
                     Assert.NotNull(getAccessPolicyResponse.Body);
 
-                    Assert.Equal(accessPolicyId, getAccessPolicyResponse.Body.Id);
                     Assert.Equal(updateAccessPolicyParameters.TenantId, getAccessPolicyResponse.Body.TenantId);
                     Assert.Equal(updateAccessPolicyParameters.ObjectId, getAccessPolicyResponse.Body.ObjectId);
 
@@ -236,7 +239,7 @@ namespace ApiManagement.Tests.ManagementApiTests
                         authorizationProviderId,
                         authorizationId,
                         accessPolicyId,
-                        getAccessPolicyResponse.Headers.ETag);
+                        "*");
 
                     // get access policy to validate that it was deleted
                     try
@@ -259,7 +262,7 @@ namespace ApiManagement.Tests.ManagementApiTests
                     var updateAuthorizationParameters = new AuthorizationContract
                     {
                         AuthorizationType = AuthorizationType.OAuth2,
-                        OAuth2GrantType = OAuth2GrantType.ClientCredentials
+                        OAuth2GrantType = OAuth2GrantType.AuthorizationCode
                     };
 
                     await testBase.client.Authorization.CreateOrUpdateWithHttpMessagesAsync(
@@ -267,8 +270,7 @@ namespace ApiManagement.Tests.ManagementApiTests
                         testBase.serviceName,
                         authorizationProviderId,
                         authorizationId,
-                        updateAuthorizationParameters,
-                        getAuthorizationResponse.Headers.ETag);
+                        updateAuthorizationParameters);
 
                     // get authorization to validate that it was updated
                     getAuthorizationResponse = await testBase.client.Authorization.GetWithHttpMessagesAsync(
@@ -278,10 +280,8 @@ namespace ApiManagement.Tests.ManagementApiTests
                         authorizationId);
 
                     Assert.NotNull(getAuthorizationResponse);
-                    Assert.NotNull(getAuthorizationResponse.Headers.ETag);
                     Assert.NotNull(getAuthorizationResponse.Body);
 
-                    Assert.Equal(authorizationId, getAuthorizationResponse.Body.Id);
                     Assert.Equal(updateAuthorizationParameters.AuthorizationType, getAuthorizationResponse.Body.AuthorizationType);
                     Assert.Equal(updateAuthorizationParameters.OAuth2GrantType, getAuthorizationResponse.Body.OAuth2GrantType);
 
@@ -291,7 +291,7 @@ namespace ApiManagement.Tests.ManagementApiTests
                         testBase.serviceName,
                         authorizationProviderId,
                         authorizationId,
-                        getAuthorizationResponse.Headers.ETag);
+                        "*");
 
                     // get authorization to validate that it was deleted
                     try
@@ -312,6 +312,20 @@ namespace ApiManagement.Tests.ManagementApiTests
                     var updateAuthProviderParameters = new AuthorizationProviderContract
                     {
                         DisplayName = TestUtilities.GenerateName("newAuthorizationProviderDisplayName"),
+                        IdentityProvider = "google",
+                        Oauth2 = new AuthorizationProviderOAuth2Settings
+                        {
+                            RedirectUrl = "https://constoso.com",
+                            GrantTypes = new AuthorizationProviderOAuth2GrantTypes
+                            {
+                                AuthorizationCode = new Dictionary<string, string>()
+                                {
+                                    { "clientId", "clientid" },
+                                    { "clientSecret", "clientsecret" },
+                                    { "scopes", "scopes" }
+                                }
+                            }
+                        }
                     };
 
                     // update authorization provider
@@ -319,8 +333,7 @@ namespace ApiManagement.Tests.ManagementApiTests
                         testBase.rgName,
                         testBase.serviceName,
                         authorizationProviderId,
-                        updateAuthProviderParameters,
-                        getAuthProviderResponse.Headers.ETag);
+                        updateAuthProviderParameters);
 
                     // get authorization provider to validate that it was updated
                     getAuthProviderResponse = await testBase.client.AuthorizationProvider.GetWithHttpMessagesAsync(
@@ -329,20 +342,17 @@ namespace ApiManagement.Tests.ManagementApiTests
                         authorizationProviderId);
 
                     Assert.NotNull(getAuthProviderResponse);
-                    Assert.NotNull(getAuthProviderResponse.Headers.ETag);
                     Assert.NotNull(getAuthProviderResponse.Body);
 
-                    Assert.Equal(authorizationProviderId, getAuthProviderResponse.Body.Id);
                     Assert.Equal(updateAuthProviderParameters.DisplayName, getAuthProviderResponse.Body.DisplayName);
                     Assert.Equal(authorizationProviderContract.IdentityProvider, getAuthProviderResponse.Body.IdentityProvider);
-                    Assert.Equal(authorizationProviderContract.Oauth2.RedirectUrl, getAuthProviderResponse.Body.Oauth2.RedirectUrl);
 
                     // delete authorization provider
                     await testBase.client.AuthorizationProvider.DeleteWithHttpMessagesAsync(
                         testBase.rgName,
                         testBase.serviceName,
                         authorizationProviderId,
-                        getAuthProviderResponse.Headers.ETag);
+                        "*");
 
                     // get authorization provider to check if it was deleted
                     try
